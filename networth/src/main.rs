@@ -46,7 +46,7 @@ fn main() {
             let mut inventory_worth = 0;
             for item in inventory {
                 let item_worth_multiplier = items_collection.get(&item.item_name).expect("couldnt find item").worth_multiplier;
-                let sell_price = item_worth_multiplier * (item.quality + 1) as usize;
+                let sell_price = item_worth_multiplier * (item.quality + 1) as usize * item.quantity;
                 inventory_worth += sell_price;
             }
             println!("The inventory is worth {inventory_worth} credits.");
