@@ -3,6 +3,7 @@ use std::{fmt::{Write, self}, collections::HashMap};
 use bitflags::bitflags;
 use reqwest::{Url, blocking::Client as ReqwestClient};
 use serde::{Deserialize, de::DeserializeOwned};
+use serde_json::Value;
 
 const BASE_URL: &str = "https://api.betweenworlds.net/v1";
 
@@ -181,7 +182,7 @@ impl Client {
                 match response.error_for_status() {
                     Ok(response) => {
                         let text = response.text().or_else(|_| {Err(ApiError::Other)})?;
-                        let user = serde_json::from_str::<T>(&text).or_else(|_error| {Err(ApiError::Deserialization)})?;
+                        let user = serde_json::from_str::<T>(&text).or_else(|error| {Err(ApiError::Deserialization(error))})?;
                         Ok(user)
                     },
                     Err(error) => Err(self.get_error(error))
@@ -248,7 +249,7 @@ pub enum ApiError {
     NotFound,
     RequestTimeout,
     Unauthorized,
-    Deserialization,
+    Deserialization(serde_json::Error),
     Other
 }
 
@@ -295,11 +296,70 @@ pub struct Item {
     #[serde(rename = "worthMultiplier")]
     pub worth_multiplier: usize,
     #[serde(rename = "consumeEffects")]
-    pub consume_effects: Option<Vec<serde_json::Value>>,
+    pub consume_effects: Option<Vec<ConsumeEffect>>,
     #[serde(rename = "skillEffects")]
     pub skill_effects: Option<Vec<serde_json::Value>>,
     #[serde(rename = "qualityDescriptions")]
     pub quality_descriptions: [String; 5]
+}
+
+use serde_enums::SerdeEnum;
+
+#[derive(Debug, SerdeEnum)]
+#[repr(u8)]
+pub enum ConsumeEffect {
+    Unknown = 0,
+    RestoreHealth(MinMax),
+    RestoreEnergy(MinMax),
+    RestoreSpirit(MinMax),
+    BuffHealth(MinMax),
+    BuffEnergy(MinMax),
+    BuffSpirit(MinMax),
+    DecreaseHealth(MinMax),
+    DecreaseEnergy(MinMax),
+    DecreaseSpirit(MinMax),
+    DebuffHealth(MinMax),
+    DebuffEnergy(MinMax),
+    DebuffSpirit(MinMax),
+    AddCredits(AddCreditsEffect),
+    RemoveCredits(MinMax),
+    AcceptMission(AcceptMissionEffect),
+    AddItem(AddItemEffect),
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MinMax {
+    pub min: isize,
+    pub max: isize
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AddCreditsEffect {
+    pub min: isize,
+    pub max: isize,
+    #[serde(rename="worthMultiplier")]
+    pub worth_multiplier: Option<usize>
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AcceptMissionEffect {
+    #[serde(rename="missionName")]
+    pub mission_name: String
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AddItemEffect {
+    pub chance: f32,
+    #[serde(rename="itemName")]
+    pub item_name: String,
+    #[serde(rename="qualityMin")]
+    pub quality_min: u8,
+    #[serde(rename="qualityMax")]
+    pub quality_max: u8,
+    #[serde(rename="quantityMin")]
+    pub quantity_min: usize,
+    #[serde(rename="quantityMax")]
+    pub quantity_max: usize
 }
 
 #[derive(Debug, Deserialize)]

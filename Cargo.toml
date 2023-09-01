@@ -2,5 +2,6 @@
 
 members = [
     "networth",
-    "betweenworlds-api"
+    "betweenworlds-api",
+    "serde-enums"
 ]
