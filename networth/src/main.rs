@@ -1,10 +1,11 @@
 use std::io::{self, Write};
 use betweenworlds_api::{Client, UserDataFlags, LeaderboardsFlags, Item, ConsumeEffect};
+use num_format::{Locale, ToFormattedString};
 use std::env;
 
 fn main() {
     println!("Welcome to the betweenworlds networth calculator!");
-
+    let locale = Locale::en;
     let username = if let Some(arg) = env::args().nth(1) {
         arg
     }
@@ -30,11 +31,11 @@ fn main() {
         Some(equipment) => {
             let mut equipment_worth = 0;
             for item in equipment {
-                let item_worth_multiplier = items_collection.get(&item.item_name).expect("couldn't find item").worth_multiplier;
-                let sell_price = item_worth_multiplier * (item.quality + 1) as usize;
+                let item_info = items_collection.get(&item.item_name).expect("couldn't find item");
+                let sell_price = calculate_item_worth(item_info, item.quality) as usize;
                 equipment_worth += sell_price;
             }
-            println!("The equipment is worth {equipment_worth} credits.");
+            println!("The equipment is worth {} credits.", equipment_worth.to_formatted_string(&locale));
             total += equipment_worth;
         },
         None => {
@@ -50,7 +51,7 @@ fn main() {
                 let sell_price = calculate_item_worth(item_info, item.quality) * item.quantity;
                 inventory_worth += sell_price;
             }
-            println!("The inventory is worth {inventory_worth} credits.");
+            println!("The inventory is worth {} credits.", inventory_worth.to_formatted_string(&locale));
             total += inventory_worth;
         },
         None => {
@@ -61,7 +62,7 @@ fn main() {
     let leaderboards_user = client.get_leaderboard_user(&username, LeaderboardsFlags::Credits).unwrap();
     match leaderboards_user.credits {
         Some(credits) => {
-            println!("The account has {} credits", credits.credits);
+            println!("The account has {} raw credits", credits.credits.to_formatted_string(&locale));
             total += credits.credits;
         },
         None => {
@@ -69,7 +70,7 @@ fn main() {
         },
     }
 
-    println!("The account networth is {} credits.", total);
+    println!("The account networth is {} credits.", total.to_formatted_string(&locale));
 }
 
 fn read_line(text: &str) -> String {
