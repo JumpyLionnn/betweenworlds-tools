@@ -254,6 +254,18 @@ struct LeaderboardsRecord {
     missions_completed: usize
 }
 
+impl LeaderboardsRecord {
+    pub fn has_changes(&self, other: &LeaderboardsRecord) -> bool {
+        self.credits != other.credits ||
+        self.level != other.level ||
+        self.overdoses != other.overdoses ||
+        self.combats_won != other.combats_won ||
+        self.items_crafted != other.items_crafted ||
+        self.jobs_performed != other.jobs_performed ||
+        self.missions_completed != other.missions_completed
+    }
+}
+
 fn update_records() {
     // TODO: make this job work offline without the app open
     let state: TrackerState = if let Ok(json) = fs::read_to_string(STATE_PATH) {
@@ -296,9 +308,13 @@ fn update_records() {
             missions_completed: user.missions_completed.unwrap().missions_completed,
         };
 
-        record.records.push(leaderboards_record);
+        let previous_record = record.records.last();
+        if previous_record.is_some_and(|previous_record| previous_record.has_changes(&leaderboards_record)) || previous_record.is_none() {
+            record.records.push(leaderboards_record);
+            fs::write(&record_path, serde_json::to_string(&record).unwrap().as_bytes()).unwrap();
+        }
 
-        fs::write(&record_path, serde_json::to_string(&record).unwrap().as_bytes()).unwrap();
+
     }
     let duration = start.elapsed();
     println!("done. took {:?}", duration);
