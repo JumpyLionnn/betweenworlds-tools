@@ -2,6 +2,7 @@
 
 members = [
     "networth",
+    "player-tracker",
     "betweenworlds-api",
     "serde-enums"
 ]

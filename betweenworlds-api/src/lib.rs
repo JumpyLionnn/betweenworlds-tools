@@ -173,6 +173,9 @@ impl Client {
         if flags.has(LeaderboardsFlags::Overdoses) {
             query.add("overdoses").expect("Couldnt write to string.");
         }
+        if flags.has(LeaderboardsFlags::MissionsCompleted) {
+            query.add("missionsCompleted").expect("Couldnt write to string.");
+        }
         query.get()
     }
 
